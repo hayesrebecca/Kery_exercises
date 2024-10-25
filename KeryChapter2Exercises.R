@@ -1,4 +1,23 @@
 ## Chapter 2 Kery
+## WHAT ARE HIERARCHICAL MODELS AND HOW DO WE ANALYZE THEM?
+
+## 2.1 Introduction
+
+## 2.2 Random Variables, Probability Density Functions, Statistical Models, Probability, and Statistical Inference
+
+## 2.3 Hierarchical Models (HMs)
+
+## 2.4 Classical Inference Based on Likelihood
+
+## 2.5 Bayesian Inference
+
+## 2.6 Basic Markov Chain Monte Carlo (MCMC)
+
+## 2.7 Model Selection and Averaging
+
+## 2.8 Assessment of Model Fit
+
+## 2.9 Summary and Outlook
 
 # Simulate a covariate called vegHt for 100 sites
 set.seed(2014) # Set seed so we all get the same values of vegHt
@@ -66,3 +85,30 @@ Vc <- solve(opt.out$hessian) # Get variance-covariance matrix
 ASE <- sqrt(diag(Vc)) # Extract asymptotic SEs
 print(ASE)
 
+## Exercises
+
+# 1. You should be able to apply Bayes’ rule to the peregrine falcon example earlier in this chapter to
+# compute the distribution of XrY. That is: how many fledged young are there, given that we have
+# detected birds on 0, 1, 2, . , J visits?
+
+
+
+# 2. For the bootstrap GoF analysis done on the occupancy model, we found that the model appears to
+# fit the data well. Try fitting the wrong model; i.e., without the vegHt covariate, and see if the
+# model fails the GoF test.
+
+
+
+# 3. Where we talked about prior distributions and sensitivity we said “if we have a flat prior on
+# logit(p) for some probability parameter p, this is very different from having a Uniform(0,1) prior
+# on p.” Evaluate this by simulating data for different priors on logit(p) and then back-transforming
+# the simulated values to see what the implied prior is for p. Find a normal prior for logit(p) that is
+# approximately uniform on [0,1] for p.
+
+
+
+# 4. Use a Metropolis or MH algorithm to simulate Normal(0,1) random variables if all you have
+# access to is a uniform random number generator. Of course you also know the mathematical form
+# for the normal pdf but you do not have a normal random number generator at hand. Verify that
+# your simulated data have the required normal distribution by making a histogram and computing
+# summary statistics.
