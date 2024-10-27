@@ -348,7 +348,7 @@ summary(T.boot)
 
 ## Pr(fledged_young|detected) = Pr(detected|fledged_young)*Pr(fledged_young) / Pr(detected)
 
-
+dbinom(0:5, size = 5, prob = 0.2)
 
 
 
