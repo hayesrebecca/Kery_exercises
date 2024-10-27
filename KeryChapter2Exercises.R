@@ -585,8 +585,16 @@ summary(T.boot)
 ## Exercises
 
 # 1. You should be able to apply Bayes’ rule to the peregrine falcon example earlier in this chapter to
-# compute the distribution of XrY. That is: how many fledged young are there, given that we have
+# compute the distribution of X|Y. That is: how many fledged young are there, given that we have
 # detected birds on 0, 1, 2, . , J visits?
+
+## Bayes rule 
+## [z|y] = [y|z][z]\[y]
+## posterior = likelihood*prior/marginalization
+
+## Pr(fledged_young|detected) = Pr(detected|fledged_young)*Pr(fledged_young) / Pr(detected)
+
+dbinom(0:5, size = 5, prob = 0.2)
 
 
 
