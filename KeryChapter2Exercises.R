@@ -1,7 +1,9 @@
 ## Chapter 2 Kery
 ## WHAT ARE HIERARCHICAL MODELS AND HOW DO WE ANALYZE THEM?
 
+## **********************************************************
 ## 2.1 Introduction
+## **********************************************************
 
 ## Hierarchical model <- set of models that are conditionally related.
 
@@ -9,7 +11,9 @@
 ## variable. Models contain one component for the observations and one or more 
 ## components that describe the variables or outcomes of ecological process.
 
+## **********************************************************
 ## 2.2 Random Variables, Probability Density Functions, Statistical Models, Probability, and Statistical Inference
+## **********************************************************
 
 ## random variables <- variables for which possible values are governed by
 ## probability distributions.
@@ -73,14 +77,19 @@ round(margY, 4)
 YgivenX <- joint / matrix(margX, nrow(joint), ncol(joint), byrow=TRUE)
 round(YgivenX, 2)
 
+## **********************************************************
 ## 2.3 Hierarchical Models (HMs)
+## **********************************************************
+
 
 ## Occupancy model for species distributions
 ## See page 11
 ## N-mixture models- used for animal abundance
 ## See page 12
 
+## **********************************************************
 ## 2.4 Classical Inference Based on Likelihood
+## **********************************************************
 
 ## "Statistical inference for any system is based on the conceptual view that data we observe (or may
 ## potentially observe) are outcomes of random variables having a distribution with parameters that we
@@ -236,6 +245,9 @@ Mhlik <- function(parms){
 
 (SE <- sqrt( (exp(tmp$estimate[3])^2)* diag(solve(tmp$hessian))[3] ) )
 
+## **********************************************************
+## 2.5 Bayesian Inference
+## **********************************************************
 
 ## In Bayesian inference, we use probability directly to characterize
 ## uncertainty about parameters whereas in classical inference probability is used to characterize operating
@@ -275,7 +287,9 @@ Mhlik <- function(parms){
 
 ## TODO QUESTION: For our lab's modeling approach, what type of priors do we typically use?
 
+## **********************************************************
 ## 2.6 Basic Markov Chain Monte Carlo (MCMC)
+## **********************************************************
 
 ## a class of methods for drawing random samples (i.e., simulating) from the target posterior distribution (or any distribution for that matter).
 
@@ -485,8 +499,14 @@ abline(h = mean(out[,2]), col = "blue", lwd = 2)
 abline(h = 2, col = "red", lwd = 2)
 
 
+## **********************************************************
 ## 2.7 Model Selection and Averaging
+## **********************************************************
 
+
+## **********************************************************
+## 2.8 Assessment of Model Fit
+## **********************************************************
 
 ## 2.8.1 PARAMETRIC BOOTSTRAPPING EXAMPLE
 sim.data <- function(beta0 = -3, beta1 = 2, p = 0.6, x=NULL){
@@ -570,12 +590,16 @@ for(i in 1:100){
 summary(T.boot)
 
 
+## **********************************************************
 ## 2.9 Summary and Outlook
+## **********************************************************
 
 
 
 
+## **********************************************************
 ## Exercises
+## **********************************************************
 
 # 1. You should be able to apply Bayes’ rule to the peregrine falcon example earlier in this chapter to
 # compute the distribution of X|Y. That is: how many fledged young are there, given that we have
