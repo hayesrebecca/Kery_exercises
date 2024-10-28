@@ -21,7 +21,7 @@
 ## Two types of probability distributions:
 ## probability density function(pdf) for continuous variables
 ## probability mass function (pmf) for discrete variables
-## They depend on one or more quantities called parameters
+## They depend on one or more quatities called parameters
 
 ## Example of a PMf (counts of observed peregrine falcons)
 ## y = {0,1,2,3,4,5}, N = 5, p = 0.2
@@ -675,129 +675,12 @@ summary(T.boot)
 
 ## Pr(fledged_young|visits) = Pr(visits|fledged_young)*Pr(fledged_young) / Pr(visits)
 
-# Parameters
-N <- 5         # Number of visits
-p <- 0.2       # Detection probability per visit
-
-# Possible values of X (fledged young)
-X_vals <- 0:5  
-prior_X <- rep(1 / length(X_vals), length(X_vals))  # Uniform prior for simplicity
-
-# Function to calculate the posterior distribution P(fledged_young|detected)
-posterior_X_given_Y <- function(Y) {
-  # Compute likelihood P(detected|fledged_young) for each number of fledged_young
-  likelihood_Y_given_X <- sapply(X_vals, function(x) dbinom(Y, size = N, prob = x * p))
-  
-  # Calculate marginal probability P(detected)
-  marginal_Y <- sum(likelihood_Y_given_X * prior_X)
-  
-  # Apply Bayes' Rule
-  posterior <- (likelihood_Y_given_X * prior_X) / marginal_Y
-  
-  # Return the posterior probability distribution P(fledged_young|detected)
-  return(posterior)
-}
-
-# Example: Compute for Y = 2
-posterior_X_given_Y(2)
-
-
-XgivenY <- joint / matrix(margY, nrow(joint), ncol(joint), byrow=TRUE)
-round(XgivenY, 2)
-
 
 
 # 2. For the bootstrap GoF analysis done on the occupancy model, we found that the model appears to
 # fit the data well. Try fitting the wrong model; i.e., without the vegHt covariate, and see if the
 # model fails the GoF test.
 
-sim.data <- function(beta0 = -3, beta1 = 2, p = 0.6, x=NULL){
-  # Function allows input of covariate "x", or simulates new
-  
-  M <- 100
-  if(is.null(x))
-    vegHt <- runif(M, 1, 3) # uniform from 1 to 3
-  
-  # Suppose that occupancy probability increases with vegHt
-  # The relationship is described (default) by an intercept of -3 and
-  #    a slope parameter of 2 on the logit scale
-  # plogis is the inverse-logit (constrains us back to the [0-1] scale)
-  psi <- plogis(beta0 + beta1*vegHt)
-  
-  # Now we simulated true presence/absence for 100 sites
-  z <- rbinom(M, 1, psi)
-  
-  # Now generate observations
-  J <- 3 # sample each site 3 times
-  y <- rbinom(M,J,p*z)
-  
-  list(y=y, J=J, vegHt=vegHt)
-}
-
-# This is the negative log-likelihood based on the marginal distribution
-# of y. It is the pmf of a zero-inflated binomial random variable.
-#
-negLogLikeocc <- function(beta, y, x, J) {
-  beta0 <- beta[1]
-  beta1 <- beta[2]
-  p<- plogis(beta[3])
-  psi <- plogis(beta0 + beta1*x)
-  marg.likelihood <- dbinom(y, J, p) * psi + ifelse(y==0, 1, 0) * (1-psi)
-  return(-sum(log(marg.likelihood)))
-}
-
-data <- sim.data()        # Generate a data set
-
-# Let's minimize it
-starting.values <- c(beta0=0, beta1=0, logitp=0)
-opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x=data$vegHt,
-                 J=data$J, hessian=TRUE)
-(mles <- opt.out$par)
-
-# Make a table with estimates, SEs, and 95% CI
-mle.table <- data.frame(Est=mles,
-                        SE = sqrt(diag(solve(opt.out$hessian))))
-mle.table$lower <- mle.table$Est - 1.96*mle.table$SE
-mle.table$upper <- mle.table$Est + 1.96*mle.table$SE
-mle.table
-
-
-# Define a fit statistic
-fitstat <- function(y, Ey){
-  sum((sqrt(y) - sqrt(Ey)))
-}
-# Compute it for the observed data
-# ~~~ 3 lines of code added to ensure we are using output from sim.data(), see Errata 2021-10-09
-y <- data$y
-J <- data$J
-vegHt <- data$vegHt
-
-
-T.obs <- fitstat(y, J*plogis(mles[1] + mles[2]*vegHt)*plogis(mles[3]))
-
-# Get bootstrap distribution of fit statistic
-T.boot <- rep(NA, 100)
-for(i in 1:100){
-  # Simulate a new data set and extract the elements. Note we use
-  # the previously simulated "vegHt" covariate
-  data <- sim.data(beta0=mles[1],beta1=mles[2],p=plogis(mles[3]),x=vegHt)
-  # Next we fit the model
-  starting.values <- c(0,0,0)
-  opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x= data$vegHt, J=data$J, hessian=TRUE)
-  (parms <- opt.out$par)
-  ## obly change from book example
-  # Obtain the fit statistic removing vegHt
-  T.boot[i]<- fitstat(y, J*plogis(parms[1] + parms[2])*plogis(parms[3]) )
-}
-
-(T.obs)
-
-summary(T.boot)
-
-## Unsurprisingly, removing the vegHt parameter causes the model to fail the GoF test.
-## In other words, because the observed statistic T is NOT somewhere between the mean and the first quartile
-## of the bootstrap distribution, thus the observed data set seems INconsistent with data sets
-## that were simulated under the model. VegHt is an important predictor for this model.
 
 # 3. Where we talked about prior distributions and sensitivity we said “if we have a flat prior on
 # logit(p) for some probability parameter p, this is very different from having a Uniform(0,1) prior
@@ -805,35 +688,7 @@ summary(T.boot)
 # the simulated values to see what the implied prior is for p. Find a normal prior for logit(p) that is
 # approximately uniform on [0,1] for p.
 
-library(ggplot2)
 
-# Step 1: Define the number of samples
-n_samples <- 10000
-
-# Step 2: Sample for Uniform(0, 1) prior on p
-p_uniform <- runif(n_samples, 0, 1)
-
-# Step 3: Simulate Normal priors on logit(p)
-logit_p_normal_flat <- rnorm(n_samples, mean = 0, sd = 1)   # Flat prior with standard normal
-logit_p_normal_adjusted <- rnorm(n_samples, mean = 0, sd = 1.8) # Adjusted sd for approximately uniform
-
-# Step 4: Back-transform to probability space
-p_normal_flat <- 1 / (1 + exp(-logit_p_normal_flat))
-p_normal_adjusted <- 1 / (1 + exp(-logit_p_normal_adjusted))
-
-# Step 5: Combine data for plotting
-prior_data <- data.frame(
-  p = c(p_uniform, p_normal_flat, p_normal_adjusted),
-  prior_type = rep(c("Uniform(0,1) on p", "Normal(0,1) on logit(p)", "Normal(0, 1.8) on logit(p)"), each = n_samples)
-)
-
-# Step 6: Plot the distributions
-ggplot(prior_data, aes(x = p, fill = prior_type)) +
-  geom_density(alpha = 0.6) +
-  labs(title = "Comparison of Implied Priors on p",
-       x = "Probability (p)", y = "Density") +
-  scale_fill_manual(values = c("blue", "red", "green")) +
-  theme_minimal()
 
 
 # 4. Use a Metropolis or MH algorithm to simulate Normal(0,1) random variables if all you have
@@ -842,39 +697,3 @@ ggplot(prior_data, aes(x = p, fill = prior_type)) +
 # your simulated data have the required normal distribution by making a histogram and computing
 # summary statistics.
 
-# Step 1: Define parameters
-n_samples <- 10000             # Number of samples to generate
-proposal_sd <- 0.5             # Standard deviation for proposal distribution (controls step size)
-samples <- numeric(n_samples)  # To store samples
-samples[1] <- 0                # Initialize chain at zero
-
-# Step 2: Target density function (Normal(0,1) PDF)
-target_density <- function(x) {
-  return(dnorm(x, mean = 0, sd = 1))
-}
-
-# Step 3: Metropolis algorithm
-for (i in 2:n_samples) {
-  # Generate proposal from a Uniform(-proposal_sd, proposal_sd) around current sample
-  proposal <- samples[i - 1] + runif(1, -proposal_sd, proposal_sd)
-  
-  # Calculate acceptance ratio
-  acceptance_ratio <- target_density(proposal) / target_density(samples[i - 1])
-  
-  # Decide whether to accept the proposal
-  if (runif(1) < acceptance_ratio) {
-    samples[i] <- proposal  # Accept proposal
-  } else {
-    samples[i] <- samples[i - 1]  # Keep current sample
-  }
-}
-
-# Step 4: Plot results
-hist(samples, probability = TRUE, breaks = 30, main = "Histogram of Samples from Normal(0,1)",
-     xlab = "Sample values", col = "skyblue", border = "white")
-curve(dnorm(x, mean = 0, sd = 1), add = TRUE, col = "darkblue", lwd = 2)
-
-# Step 5: Summary statistics
-summary(samples)
-mean(samples)  # Should be close to 0
-sd(samples)    # Should be close to 1
