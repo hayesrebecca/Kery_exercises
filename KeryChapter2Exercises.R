@@ -713,6 +713,35 @@ summary(T.boot)
 # the simulated values to see what the implied prior is for p. Find a normal prior for logit(p) that is
 # approximately uniform on [0,1] for p.
 
+library(ggplot2)
+
+# Step 1: Define the number of samples
+n_samples <- 10000
+
+# Step 2: Sample for Uniform(0, 1) prior on p
+p_uniform <- runif(n_samples, 0, 1)
+
+# Step 3: Simulate Normal priors on logit(p)
+logit_p_normal_flat <- rnorm(n_samples, mean = 0, sd = 1)   # Flat prior with standard normal
+logit_p_normal_adjusted <- rnorm(n_samples, mean = 0, sd = 1.8) # Adjusted sd for approximately uniform
+
+# Step 4: Back-transform to probability space
+p_normal_flat <- 1 / (1 + exp(-logit_p_normal_flat))
+p_normal_adjusted <- 1 / (1 + exp(-logit_p_normal_adjusted))
+
+# Step 5: Combine data for plotting
+prior_data <- data.frame(
+  p = c(p_uniform, p_normal_flat, p_normal_adjusted),
+  prior_type = rep(c("Uniform(0,1) on p", "Normal(0,1) on logit(p)", "Normal(0, 1.8) on logit(p)"), each = n_samples)
+)
+
+# Step 6: Plot the distributions
+ggplot(prior_data, aes(x = p, fill = prior_type)) +
+  geom_density(alpha = 0.6) +
+  labs(title = "Comparison of Implied Priors on p",
+       x = "Probability (p)", y = "Density") +
+  scale_fill_manual(values = c("blue", "red", "green")) +
+  theme_minimal()
 
 
 # 4. Use a Metropolis or MH algorithm to simulate Normal(0,1) random variables if all you have
@@ -720,3 +749,40 @@ summary(T.boot)
 # for the normal pdf but you do not have a normal random number generator at hand. Verify that
 # your simulated data have the required normal distribution by making a histogram and computing
 # summary statistics.
+
+# Step 1: Define parameters
+n_samples <- 10000             # Number of samples to generate
+proposal_sd <- 0.5             # Standard deviation for proposal distribution (controls step size)
+samples <- numeric(n_samples)  # To store samples
+samples[1] <- 0                # Initialize chain at zero
+
+# Step 2: Target density function (Normal(0,1) PDF)
+target_density <- function(x) {
+  return(dnorm(x, mean = 0, sd = 1))
+}
+
+# Step 3: Metropolis algorithm
+for (i in 2:n_samples) {
+  # Generate proposal from a Uniform(-proposal_sd, proposal_sd) around current sample
+  proposal <- samples[i - 1] + runif(1, -proposal_sd, proposal_sd)
+  
+  # Calculate acceptance ratio
+  acceptance_ratio <- target_density(proposal) / target_density(samples[i - 1])
+  
+  # Decide whether to accept the proposal
+  if (runif(1) < acceptance_ratio) {
+    samples[i] <- proposal  # Accept proposal
+  } else {
+    samples[i] <- samples[i - 1]  # Keep current sample
+  }
+}
+
+# Step 4: Plot results
+hist(samples, probability = TRUE, breaks = 30, main = "Histogram of Samples from Normal(0,1)",
+     xlab = "Sample values", col = "skyblue", border = "white")
+curve(dnorm(x, mean = 0, sd = 1), add = TRUE, col = "darkblue", lwd = 2)
+
+# Step 5: Summary statistics
+summary(samples)
+mean(samples)  # Should be close to 0
+sd(samples)    # Should be close to 1
