@@ -491,19 +491,24 @@ abline(h = 2, col = "red", lwd = 2)
 ## 2.8.1 PARAMETRIC BOOTSTRAPPING EXAMPLE
 sim.data <- function(beta0 = -3, beta1 = 2, p = 0.6, x=NULL){
   # Function allows input of covariate "x", or simulates new
+  
   M <- 100
   if(is.null(x))
     vegHt <- runif(M, 1, 3) # uniform from 1 to 3
+  
   # Suppose that occupancy probability increases with vegHt
   # The relationship is described (default) by an intercept of -3 and
-  # a slope parameter of 2 on the logit scale
+  #    a slope parameter of 2 on the logit scale
   # plogis is the inverse-logit (constrains us back to the [0-1] scale)
   psi <- plogis(beta0 + beta1*vegHt)
+  
   # Now we simulated true presence/absence for 100 sites
   z <- rbinom(M, 1, psi)
+  
   # Now generate observations
   J <- 3 # sample each site 3 times
   y <- rbinom(M,J,p*z)
+  
   list(y=y, J=J, vegHt=vegHt)
 }
 
@@ -511,37 +516,22 @@ sim.data <- function(beta0 = -3, beta1 = 2, p = 0.6, x=NULL){
 # of y. It is the pmf of a zero-inflated binomial random variable.
 #
 negLogLikeocc <- function(beta, y, x, J) {
-
   beta0 <- beta[1]
   beta1 <- beta[2]
-  p <- plogis(beta[3])
+  p<- plogis(beta[3])
   psi <- plogis(beta0 + beta1*x)
   marg.likelihood <- dbinom(y, J, p) * psi + ifelse(y==0, 1, 0) * (1-psi)
   return(-sum(log(marg.likelihood)))
 }
 
-# Look at (negative) log-likelihood for 2 parameter sets
-negLogLike(c(0,0), y=z, x=vegHt)
-negLogLike(c(-3,2), y=z, x=vegHt) # Lower is better!
-# Let's minimize it formally by function minimisation
-starting.values <- c(beta0=0, beta1=0)
-opt.out <- optim(starting.values, negLogLike, y=z, x=vegHt, hessian=TRUE)
-(mles <- opt.out$par) # MLEs are pretty close to truth
+data <- sim.data()        # Generate a data set
 
-# Alternative 1: Brute-force grid search for MLEs
-mat <- as.matrix(expand.grid(seq(-10,10,0.1), seq(-10,10,0.1)))
-# above: Can vary resolution (e.g., from 0.1 to 0.01)
-nll <- array(NA, dim = nrow(mat))
-for (i in 1:nrow(mat)){
-  nll[i] <- negLogLike(mat[i,], y = z, x = vegHt)
-
-
-data <- sim.data() # Generate a data set
-# Let's minimize the negative log-likelihood
+# Let's minimize it
 starting.values <- c(beta0=0, beta1=0, logitp=0)
-opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x=data$vegHt,J=data$J,
-                 hessian=TRUE)
+opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x=data$vegHt,
+                 J=data$J, hessian=TRUE)
 (mles <- opt.out$par)
+
 # Make a table with estimates, SEs, and 95% CI
 mle.table <- data.frame(Est=mles,
                         SE = sqrt(diag(solve(opt.out$hessian))))
@@ -549,12 +539,18 @@ mle.table$lower <- mle.table$Est - 1.96*mle.table$SE
 mle.table$upper <- mle.table$Est + 1.96*mle.table$SE
 mle.table
 
+
 # Define a fit statistic
 fitstat <- function(y, Ey){
   sum((sqrt(y) - sqrt(Ey)))
 }
 # Compute it for the observed data
+# ~~~ 3 lines of code added to ensure we are using output from sim.data(), see Errata 2021-10-09
+y <- data$y
+J <- data$J
+vegHt <- data$vegHt
 T.obs <- fitstat(y, J*plogis(mles[1] + mles[2]*vegHt)*plogis(mles[3]))
+
 # Get bootstrap distribution of fit statistic
 T.boot <- rep(NA, 100)
 for(i in 1:100){
@@ -563,18 +559,15 @@ for(i in 1:100){
   data <- sim.data(beta0=mles[1],beta1=mles[2],p=plogis(mles[3]),x=vegHt)
   # Next we fit the model
   starting.values <- c(0,0,0)
-  opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x= data$vegHt, J=data$J,
-                   hessian=TRUE)
+  opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x= data$vegHt, J=data$J, hessian=TRUE)
   (parms <- opt.out$par)
   # Obtain the fit statistic
   T.boot[i]<- fitstat(y, J*plogis(parms[1] + parms[2]*vegHt)*plogis(parms[3]) )
-
 }
 
 (T.obs)
 
 summary(T.boot)
-
 
 
 ## 2.9 Summary and Outlook
@@ -594,7 +587,31 @@ summary(T.boot)
 
 ## Pr(fledged_young|detected) = Pr(detected|fledged_young)*Pr(fledged_young) / Pr(detected)
 
-dbinom(0:5, size = 5, prob = 0.2)
+# Parameters
+N <- 5         # Number of visits
+p <- 0.2       # Detection probability per visit
+
+# Possible values of X (fledged young)
+X_vals <- 0:5  
+prior_X <- rep(1 / length(X_vals), length(X_vals))  # Uniform prior for simplicity
+
+# Function to calculate the posterior distribution P(fledged_young|detected)
+posterior_X_given_Y <- function(Y) {
+  # Compute likelihood P(detected|fledged_young) for each number of fledged_young
+  likelihood_Y_given_X <- sapply(X_vals, function(x) dbinom(Y, size = N, prob = x * p))
+  
+  # Calculate marginal probability P(detected)
+  marginal_Y <- sum(likelihood_Y_given_X * prior_X)
+  
+  # Apply Bayes' Rule
+  posterior <- (likelihood_Y_given_X * prior_X) / marginal_Y
+  
+  # Return the posterior probability distribution P(fledged_young|detected)
+  return(posterior)
+}
+
+# Example: Compute for Y = 2
+posterior_X_given_Y(2)
 
 
 
@@ -602,7 +619,93 @@ dbinom(0:5, size = 5, prob = 0.2)
 # fit the data well. Try fitting the wrong model; i.e., without the vegHt covariate, and see if the
 # model fails the GoF test.
 
+sim.data <- function(beta0 = -3, beta1 = 2, p = 0.6, x=NULL){
+  # Function allows input of covariate "x", or simulates new
+  
+  M <- 100
+  if(is.null(x))
+    vegHt <- runif(M, 1, 3) # uniform from 1 to 3
+  
+  # Suppose that occupancy probability increases with vegHt
+  # The relationship is described (default) by an intercept of -3 and
+  #    a slope parameter of 2 on the logit scale
+  # plogis is the inverse-logit (constrains us back to the [0-1] scale)
+  psi <- plogis(beta0 + beta1*vegHt)
+  
+  # Now we simulated true presence/absence for 100 sites
+  z <- rbinom(M, 1, psi)
+  
+  # Now generate observations
+  J <- 3 # sample each site 3 times
+  y <- rbinom(M,J,p*z)
+  
+  list(y=y, J=J, vegHt=vegHt)
+}
 
+# This is the negative log-likelihood based on the marginal distribution
+# of y. It is the pmf of a zero-inflated binomial random variable.
+#
+negLogLikeocc <- function(beta, y, x, J) {
+  beta0 <- beta[1]
+  beta1 <- beta[2]
+  p<- plogis(beta[3])
+  psi <- plogis(beta0 + beta1*x)
+  marg.likelihood <- dbinom(y, J, p) * psi + ifelse(y==0, 1, 0) * (1-psi)
+  return(-sum(log(marg.likelihood)))
+}
+
+data <- sim.data()        # Generate a data set
+
+# Let's minimize it
+starting.values <- c(beta0=0, beta1=0, logitp=0)
+opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x=data$vegHt,
+                 J=data$J, hessian=TRUE)
+(mles <- opt.out$par)
+
+# Make a table with estimates, SEs, and 95% CI
+mle.table <- data.frame(Est=mles,
+                        SE = sqrt(diag(solve(opt.out$hessian))))
+mle.table$lower <- mle.table$Est - 1.96*mle.table$SE
+mle.table$upper <- mle.table$Est + 1.96*mle.table$SE
+mle.table
+
+
+# Define a fit statistic
+fitstat <- function(y, Ey){
+  sum((sqrt(y) - sqrt(Ey)))
+}
+# Compute it for the observed data
+# ~~~ 3 lines of code added to ensure we are using output from sim.data(), see Errata 2021-10-09
+y <- data$y
+J <- data$J
+vegHt <- data$vegHt
+
+
+T.obs <- fitstat(y, J*plogis(mles[1] + mles[2]*vegHt)*plogis(mles[3]))
+
+# Get bootstrap distribution of fit statistic
+T.boot <- rep(NA, 100)
+for(i in 1:100){
+  # Simulate a new data set and extract the elements. Note we use
+  # the previously simulated "vegHt" covariate
+  data <- sim.data(beta0=mles[1],beta1=mles[2],p=plogis(mles[3]),x=vegHt)
+  # Next we fit the model
+  starting.values <- c(0,0,0)
+  opt.out <- optim(starting.values, negLogLikeocc, y=data$y, x= data$vegHt, J=data$J, hessian=TRUE)
+  (parms <- opt.out$par)
+  ## obly change from book example
+  # Obtain the fit statistic removing vegHt
+  T.boot[i]<- fitstat(y, J*plogis(parms[1] + parms[2])*plogis(parms[3]) )
+}
+
+(T.obs)
+
+summary(T.boot)
+
+## Unsurprisingly, removing the vegHt parameter causes the model to fail the GoF test.
+## In other words, because the observed statistic T is NOT somewhere between the mean and the first quartile
+## of the bootstrap distribution, thus the observed data set seems INconsistent with data sets
+## that were simulated under the model. VegHt is an important predictor for this model.
 
 # 3. Where we talked about prior distributions and sensitivity we said “if we have a flat prior on
 # logit(p) for some probability parameter p, this is very different from having a Uniform(0,1) prior
