@@ -503,10 +503,74 @@ abline(h = 2, col = "red", lwd = 2)
 ## 2.7 Model Selection and Averaging
 ## **********************************************************
 
+## after choosing a class of models and figuring out how to fit them, next problem is choosing
+## among several or many different models within the class, or combining the estimates from several
+## different models (“model averaging”)
+
+## 1. Model selection by AIC
+
+## maximizes “short-term predictive success”; i.e., it can
+## be expected to select models that would best predict a similar data set as the one at hand
+
+## Models with small values of AIC are preferred
+
+## In applications that involve model selection based on AIC, it is typical to
+## order models by AIC and produce AIC weights, which are exponentiated differences between the
+## AIC value (or AICc value) for a model and that of the best model.
+
+## Strengths:
+## automatic whenever we can compute the marginal likelihood, and it produces weights that can be 
+## used directly for model-averaging predictions or parameters that have a consistent interpretation
+## across models
+
+## Weaknesses:
+## not always clear what the effective sample size n should be in the calculation of AICc: i.e., is 
+## it the number of sites (most relevant for selecting structure for the occupancy part of the 
+## model) or the total number of samples (sites * replicates; most relevant for the detection part 
+## of the model).
+
+## 2. Model selection by DIC (deviance information criterion)
+
+## Bayesian metric for model selection, analogous to AIC (in its application), called the deviance 
+## information criterion (DIC)
+
+## The DIC is widely used although its use has been called into question by several authors.
+
+## 3. Bayesian model averaging with indicator variables 
+## especially useful for producing model-averaged
+## predictions of latent variables because the MCMC output for a variable represents a posterior
+## sample from all possible models in the set defined by combinations of the w variables
+
+
 
 ## **********************************************************
 ## 2.8 Assessment of Model Fit
 ## **********************************************************
+
+## We define “fit” as follows: Do our data resemble, in some precisely defined manner, realizations 
+## from the model?
+
+## if we simulate data under the model in question, are simulated realizations consistent with 
+## (“similar to”) the data set that we actually have?
+
+## In classical inference, we will almost always use parametric bootstrapping, in which we simulate 
+## data sets using the MLE of the model parameters and then fit the model to each simulated data set.
+## For each simulated data set and fit we compute the value of a fit statistic and compare the value
+## of the fit statistic for observed data with the distribution of that computed from the simulated 
+## data sets (this is called the “bootstrap distribution”).
+
+## In Bayesian analysis, we adopt the Bayesian p-value approach that has a similar feel to the 
+## bootstrap, in the sense that we compare the values of a fit statistic for simulated data sets 
+## with that computed for the data set at hand.
+
+## To evaluate GoF in Bayesian analyses, we will typically use the Bayesian p-value as a summary of 
+## a posterior predictive check
+
+## Bayesian p-value is simply the posterior probability Pr(T(ynew) > T(y)), which should be close
+## to 0.5 for a good modeldone that fits in the sense that the observed data set is consistent with realizations
+## simulated under the model being fitted to the observed data. In practice we judge “close to
+## 0.5” as being “not too close to 0 or 1” which admittedly is somewhat subjective.
+
 
 ## 2.8.1 PARAMETRIC BOOTSTRAPPING EXAMPLE
 sim.data <- function(beta0 = -3, beta1 = 2, p = 0.6, x=NULL){
