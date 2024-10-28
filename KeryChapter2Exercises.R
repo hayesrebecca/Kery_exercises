@@ -1,7 +1,9 @@
 ## Chapter 2 Kery
 ## WHAT ARE HIERARCHICAL MODELS AND HOW DO WE ANALYZE THEM?
 
+## **********************************************************
 ## 2.1 Introduction
+## **********************************************************
 
 ## Hierarchical model <- set of models that are conditionally related.
 
@@ -9,7 +11,9 @@
 ## variable. Models contain one component for the observations and one or more 
 ## components that describe the variables or outcomes of ecological process.
 
+## **********************************************************
 ## 2.2 Random Variables, Probability Density Functions, Statistical Models, Probability, and Statistical Inference
+## **********************************************************
 
 ## random variables <- variables for which possible values are governed by
 ## probability distributions.
@@ -73,14 +77,19 @@ round(margY, 4)
 YgivenX <- joint / matrix(margX, nrow(joint), ncol(joint), byrow=TRUE)
 round(YgivenX, 2)
 
+## **********************************************************
 ## 2.3 Hierarchical Models (HMs)
+## **********************************************************
+
 
 ## Occupancy model for species distributions
 ## See page 11
 ## N-mixture models- used for animal abundance
 ## See page 12
 
+## **********************************************************
 ## 2.4 Classical Inference Based on Likelihood
+## **********************************************************
 
 ## "Statistical inference for any system is based on the conceptual view that data we observe (or may
 ## potentially observe) are outcomes of random variables having a distribution with parameters that we
@@ -236,6 +245,9 @@ Mhlik <- function(parms){
 
 (SE <- sqrt( (exp(tmp$estimate[3])^2)* diag(solve(tmp$hessian))[3] ) )
 
+## **********************************************************
+## 2.5 Bayesian Inference
+## **********************************************************
 
 ## In Bayesian inference, we use probability directly to characterize
 ## uncertainty about parameters whereas in classical inference probability is used to characterize operating
@@ -275,7 +287,9 @@ Mhlik <- function(parms){
 
 ## TODO QUESTION: For our lab's modeling approach, what type of priors do we typically use?
 
+## **********************************************************
 ## 2.6 Basic Markov Chain Monte Carlo (MCMC)
+## **********************************************************
 
 ## a class of methods for drawing random samples (i.e., simulating) from the target posterior distribution (or any distribution for that matter).
 
@@ -485,7 +499,77 @@ abline(h = mean(out[,2]), col = "blue", lwd = 2)
 abline(h = 2, col = "red", lwd = 2)
 
 
+## **********************************************************
 ## 2.7 Model Selection and Averaging
+## **********************************************************
+
+## after choosing a class of models and figuring out how to fit them, next problem is choosing
+## among several or many different models within the class, or combining the estimates from several
+## different models (“model averaging”)
+
+## 1. Model selection by AIC
+
+## maximizes “short-term predictive success”; i.e., it can
+## be expected to select models that would best predict a similar data set as the one at hand
+
+## Models with small values of AIC are preferred
+
+## In applications that involve model selection based on AIC, it is typical to
+## order models by AIC and produce AIC weights, which are exponentiated differences between the
+## AIC value (or AICc value) for a model and that of the best model.
+
+## Strengths:
+## automatic whenever we can compute the marginal likelihood, and it produces weights that can be 
+## used directly for model-averaging predictions or parameters that have a consistent interpretation
+## across models
+
+## Weaknesses:
+## not always clear what the effective sample size n should be in the calculation of AICc: i.e., is 
+## it the number of sites (most relevant for selecting structure for the occupancy part of the 
+## model) or the total number of samples (sites * replicates; most relevant for the detection part 
+## of the model).
+
+## 2. Model selection by DIC (deviance information criterion)
+
+## Bayesian metric for model selection, analogous to AIC (in its application), called the deviance 
+## information criterion (DIC)
+
+## The DIC is widely used although its use has been called into question by several authors.
+
+## 3. Bayesian model averaging with indicator variables 
+## especially useful for producing model-averaged
+## predictions of latent variables because the MCMC output for a variable represents a posterior
+## sample from all possible models in the set defined by combinations of the w variables
+
+
+
+## **********************************************************
+## 2.8 Assessment of Model Fit
+## **********************************************************
+
+## We define “fit” as follows: Do our data resemble, in some precisely defined manner, realizations 
+## from the model?
+
+## if we simulate data under the model in question, are simulated realizations consistent with 
+## (“similar to”) the data set that we actually have?
+
+## In classical inference, we will almost always use parametric bootstrapping, in which we simulate 
+## data sets using the MLE of the model parameters and then fit the model to each simulated data set.
+## For each simulated data set and fit we compute the value of a fit statistic and compare the value
+## of the fit statistic for observed data with the distribution of that computed from the simulated 
+## data sets (this is called the “bootstrap distribution”).
+
+## In Bayesian analysis, we adopt the Bayesian p-value approach that has a similar feel to the 
+## bootstrap, in the sense that we compare the values of a fit statistic for simulated data sets 
+## with that computed for the data set at hand.
+
+## To evaluate GoF in Bayesian analyses, we will typically use the Bayesian p-value as a summary of 
+## a posterior predictive check
+
+## Bayesian p-value is simply the posterior probability Pr(T(ynew) > T(y)), which should be close
+## to 0.5 for a good modeldone that fits in the sense that the observed data set is consistent with realizations
+## simulated under the model being fitted to the observed data. In practice we judge “close to
+## 0.5” as being “not too close to 0 or 1” which admittedly is somewhat subjective.
 
 
 ## 2.8.1 PARAMETRIC BOOTSTRAPPING EXAMPLE
@@ -570,12 +654,16 @@ for(i in 1:100){
 summary(T.boot)
 
 
+## **********************************************************
 ## 2.9 Summary and Outlook
+## **********************************************************
 
 
 
 
+## **********************************************************
 ## Exercises
+## **********************************************************
 
 # 1. You should be able to apply Bayes’ rule to the peregrine falcon example earlier in this chapter to
 # compute the distribution of X|Y. That is: how many fledged young are there, given that we have
