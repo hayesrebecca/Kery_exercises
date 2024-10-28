@@ -21,7 +21,7 @@
 ## Two types of probability distributions:
 ## probability density function(pdf) for continuous variables
 ## probability mass function (pmf) for discrete variables
-## They depend on one or more quatities called parameters
+## They depend on one or more quantities called parameters
 
 ## Example of a PMf (counts of observed peregrine falcons)
 ## y = {0,1,2,3,4,5}, N = 5, p = 0.2
@@ -700,6 +700,10 @@ posterior_X_given_Y <- function(Y) {
 
 # Example: Compute for Y = 2
 posterior_X_given_Y(2)
+
+
+XgivenY <- joint / matrix(margY, nrow(joint), ncol(joint), byrow=TRUE)
+round(XgivenY, 2)
 
 
 
